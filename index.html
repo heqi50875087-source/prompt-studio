@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>分镜工坊</title>
+<style>
+  :root{--bg:#0d0f14;--panel:#161a22;--panel2:#1d222c;--border:#2a3038;--tx:#e8ecf2;--muted:#97a0b0;--dim:#5d6675;
+    --gold:#e0a955;--goldsoft:#f0cd8a;--ok:#46c08a;--warn:#e0a955;--err:#ef5e63}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--tx);min-height:100vh;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:15px;line-height:1.6;padding:26px 22px 60px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:900px;margin:0 auto}
+  header{display:flex;align-items:center;gap:14px}
+  .logo{font-size:30px} h1{font-size:23px;font-weight:650;letter-spacing:.5px}
+  h1 .sub{font-size:13px;color:var(--gold);font-weight:400;margin-left:8px}
+  .tagline{color:var(--muted);font-size:13px;margin:4px 0 16px 44px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .pill{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;padding:4px 12px;border-radius:20px;background:var(--panel2);border:1px solid var(--border);color:var(--muted)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+  .pill.warm .dot{background:var(--warn);animation:pulse 1.2s ease-in-out infinite}
+  .pill.ready .dot{background:var(--ok)} .pill.err .dot{background:var(--err)} .pill.cloud .dot{background:#7db8ff}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:20px;margin-top:16px}
+  label.fl{display:block;font-size:12.5px;color:var(--muted);margin-bottom:7px;letter-spacing:.3px}
+  textarea{width:100%;min-height:92px;resize:vertical;background:var(--panel2);color:var(--tx);border:1px solid var(--border);
+    border-radius:11px;padding:13px 15px;font-size:15px;font-family:inherit;line-height:1.6}
+  textarea:focus{outline:none;border-color:var(--gold)} textarea::placeholder{color:var(--dim)}
+  .seg{display:inline-flex;flex-wrap:wrap;background:var(--panel2);border:1px solid var(--border);border-radius:9px;overflow:hidden}
+  .seg button{background:none;border:none;color:var(--muted);padding:9px 13px;font-size:13px;cursor:pointer;font-family:inherit}
+  .seg button.on{background:var(--gold);color:#16110a;font-weight:600}
+  .seg button.dis{opacity:.35;cursor:not-allowed}
+  .platrow{margin-top:16px}
+  .params{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;align-items:flex-end}
+  .pgroup{display:flex;flex-direction:column;gap:7px}
+  select,input[type=number],input[type=text],input[type=password]{background:var(--panel2);color:var(--tx);border:1px solid var(--border);
+    border-radius:9px;padding:9px 12px;font-size:14px;font-family:inherit}
+  select:focus,input:focus{outline:none;border-color:var(--gold)}
+  input[type=number]{width:70px} #styleCustom{width:160px;display:none}
+  .genrow{display:flex;gap:10px;margin-top:18px}
+  .gen{flex:1;background:linear-gradient(180deg,var(--goldsoft),var(--gold));color:#16110a;border:none;border-radius:12px;
+    padding:14px 10px;font-size:15.5px;font-weight:650;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .06s,opacity .2s}
+  .gen.alt{background:var(--panel2);color:var(--goldsoft);border:1px solid var(--border)}
+  .gen:active{transform:translateY(1px)} .gen:disabled{opacity:.45;cursor:not-allowed}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(22,17,10,.35);border-top-color:#16110a;
+    border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:8px}
+  .gen.alt .spin{border-color:rgba(240,205,138,.3);border-top-color:var(--goldsoft)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .hint{color:var(--dim);font-size:12px;margin-top:9px}
+  /* 折叠卡通用(技法库/历史/设置/提示词库) */
+  .kbar{display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+  .kbar .t{font-size:14px;font-weight:600;color:var(--goldsoft)}
+  .kfolder{color:var(--dim);font-size:12px;margin:12px 0;line-height:1.6}
+  .kfolder code{background:var(--panel2);padding:1px 6px;border-radius:5px;color:var(--muted)}
+  .kitem{background:var(--panel2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden}
+  .khead{display:flex;align-items:center;gap:11px;padding:10px 12px}
+  .khead .kn{flex:1;min-width:0;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+  .khead .car{color:var(--dim);font-size:12px;cursor:pointer}
+  .kdetail{display:none;padding:0 14px 13px 14px;font-size:13px;color:var(--muted);line-height:1.65;border-top:1px solid var(--border)}
+  .kdetail .lab{color:var(--goldsoft);font-size:12px}
+  .sw{position:relative;width:42px;height:23px;flex:none;cursor:pointer}
+  .sw input{opacity:0;width:0;height:0;position:absolute}
+  .sw .tk{position:absolute;inset:0;background:var(--border);border-radius:20px;transition:.2s}
+  .sw .tk:before{content:"";position:absolute;width:17px;height:17px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  .sw input:checked + .tk{background:var(--gold)} .sw input:checked + .tk:before{transform:translateX(19px)}
+  .krow{display:flex;gap:10px;align-items:center;margin-top:6px;flex-wrap:wrap}
+  .btn2{background:var(--panel2);color:var(--goldsoft);border:1px solid var(--border);border-radius:9px;padding:9px 15px;font-size:13.5px;cursor:pointer;font-family:inherit}
+  .btn2:hover{border-color:var(--gold)} .btn2:disabled{opacity:.4;cursor:not-allowed}
+  .btn3{background:none;border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:5px 11px;font-size:12px;cursor:pointer;font-family:inherit;margin-top:8px}
+  .hbadge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:6px;background:var(--panel);border:1px solid var(--border);color:var(--muted);margin-right:6px}
+  .hbadge.v{color:var(--goldsoft);border-color:var(--gold)} .hbadge.c{color:#7db8ff;border-color:#3a5a82}
+  .hmeta{color:var(--dim);font-size:11.5px;margin:2px 0 9px;line-height:1.6}
+  .hpre{background:#0a0c10;border:1px solid var(--border);border-radius:9px;padding:11px 13px;font-family:"SF Mono",Menlo,monospace;font-size:12px;line-height:1.65;color:#cfd7e3;white-space:pre-wrap;word-break:break-word;max-height:38vh;overflow:auto;margin-bottom:9px}
+  .result{margin-top:16px;display:none}
+  .rhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;gap:8px;flex-wrap:wrap}
+  .rhead .t{font-size:13px;color:var(--muted)} .racts{display:flex;gap:9px;flex-wrap:wrap}
+  .ract{background:var(--panel2);color:var(--goldsoft);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+  .ract:hover{border-color:var(--gold)}
+  pre.out{background:#0a0c10;border:1px solid var(--border);border-radius:11px;padding:16px 18px;font-family:"SF Mono",Menlo,Consolas,monospace;
+    font-size:13px;line-height:1.7;color:#d4dbe6;white-space:pre-wrap;word-break:break-word;max-height:62vh;overflow:auto}
+  .foot{text-align:center;color:var(--dim);font-size:12px;margin-top:28px;line-height:1.7}
+  .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--gold);color:#16110a;
+    font-weight:600;font-size:13.5px;padding:10px 20px;border-radius:24px;opacity:0;transition:.25s;pointer-events:none;z-index:99;max-width:88vw}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* 设置 */
+  .setgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:10px}
+  .setgrid .pgroup input,.setgrid .pgroup select{width:100%}
+  .linkbox{background:#0a0c10;border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-family:"SF Mono",Menlo,monospace;
+    font-size:11.5px;color:#9fc1e8;word-break:break-all;margin-top:10px;display:none;max-height:120px;overflow:auto}
+  /* 提示词库 */
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+  .chip{background:var(--panel2);border:1px solid var(--border);color:var(--muted);border-radius:18px;padding:6px 14px;font-size:12.5px;cursor:pointer;font-family:inherit}
+  .chip.on{background:var(--gold);color:#16110a;border-color:var(--gold);font-weight:600}
+  #libSearch{width:100%}
+  .libmeta{color:var(--dim);font-size:12px;margin:6px 0 10px}
+  .star{cursor:pointer;font-size:15px;flex:none;color:var(--dim)} .star.on{color:var(--gold)}
+  /* API 出图 */
+  #imgpanel{display:none;margin-top:14px;border-top:1px dashed var(--border);padding-top:14px}
+  #imgPrompt{min-height:70px;font-size:13px}
+  .imgwrap{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .imgwrap img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+  /* 手机适配 */
+  @media (max-width:680px){
+    body{padding:14px 12px 46px;font-size:14.5px}
+    .logo{font-size:24px} h1{font-size:19px} h1 .sub{display:block;margin:2px 0 0}
+    .tagline{margin-left:0}
+    .card{padding:15px 13px;border-radius:13px}
+    .genrow{flex-direction:column}
+    .gen{padding:14px 10px}
+    .seg button{padding:11px 12px;font-size:12.5px}
+    .params{gap:12px} .pgroup{flex:1;min-width:46%}
+    .pgroup select,#styleCustom{width:100%}
+    pre.out{padding:12px;font-size:12px;max-height:52vh}
+    .racts{width:100%}
+    .ract{flex:1;text-align:center;padding:9px 6px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><span class="logo">🎬</span><h1>分镜工坊<span class="sub">中文一句话 → 电影级分镜 · 提示词库</span></h1></header>
+  <div class="tagline"><span id="modeTag">检测运行环境…</span>
+    <span id="statusPill" class="pill warm"><span class="dot"></span><span id="statusTxt">连接中…</span></span></div>
+
+  <div class="card">
+    <label class="fl" for="scene">用中文说一个场景 / 故事 / 镜头需求</label>
+    <textarea id="scene" placeholder="例:萤火虫在夜里给迷路的小孩照亮回家的路,温暖治愈;或「龟兔赛跑,骄傲的兔子睡着了,乌龟坚持爬过终点」"></textarea>
+
+    <div class="platrow">
+      <label class="fl">目标平台(出该平台最吃的格式)</label>
+      <div class="seg" id="platform">
+        <button data-v="universal" class="on">通用</button>
+        <button data-v="jimeng">即梦</button>
+        <button data-v="xiaoyunque">小云雀</button>
+        <button data-v="gemini">Gemini / Veo</button>
+      </div>
+    </div>
+
+    <div class="params">
+      <div class="pgroup"><label class="fl">镜头数</label><input type="number" id="shots" value="4" min="1" max="12"></div>
+      <div class="pgroup"><label class="fl">风格</label>
+        <select id="style">
+          <option value="写实电影">写实电影</option><option value="皮克斯3D动画">皮克斯 3D</option>
+          <option value="水彩绘本">水彩绘本</option><option value="定格动画">定格动画</option>
+          <option value="黑色电影">黑色电影</option><option value="__custom">自定义…</option>
+        </select>
+      </div>
+      <div class="pgroup"><label class="fl">自定义风格</label><input type="text" id="styleCustom" placeholder="如:吉卜力手绘"></div>
+      <div class="pgroup"><label class="fl">画幅</label>
+        <div class="seg" id="aspect">
+          <button data-v="16:9" class="on">16:9</button><button data-v="9:16">9:16 竖屏</button>
+          <button data-v="1:1">1:1</button><button data-v="2.39:1">2.39:1</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="platrow">
+      <label class="fl">生成引擎</label>
+      <div class="seg" id="engine">
+        <button data-v="local" class="on">⚡ 本地 Qwen · 不过审</button>
+        <button data-v="claude">🧠 Claude · 更强</button>
+        <button data-v="api">🌐 外接 API · 处处可用</button>
+      </div>
+    </div>
+
+    <div class="genrow">
+      <button class="gen" id="genZh" data-lang="zh" disabled>一键中文</button>
+      <button class="gen" id="genEn" data-lang="en" disabled>一键英文</button>
+      <button class="gen alt" id="genBoth" data-lang="both" disabled>中英双语</button>
+    </div>
+    <div class="genrow" style="margin-top:10px">
+      <button class="gen alt" id="genImg" style="flex:1" disabled>🖼 生图分镜(ChatGPT Image 2)· 角色圣经锁一致</button>
+    </div>
+    <div class="hint" id="genHint">视频分镜出"图+视频"提示词;生图分镜出 ChatGPT Image 2 关键帧提示词。</div>
+  </div>
+
+  <!-- 设置 -->
+  <div class="card">
+    <div class="kbar" id="setbar"><span class="t">⚙️ 设置 · 外接 API 与镜像站</span><span id="setarrow" style="color:var(--dim)">▸</span></div>
+    <div id="setbody" style="display:none">
+      <div class="kfolder">外接 API 让本工具在<b>任何电脑 / 手机</b>都能用:填一个 OpenAI 兼容接口(DeepSeek / OpenRouter / SiliconFlow / OpenAI / Gemini…)。密钥只存<b>本浏览器</b>(localStorage),不上传、不进代码仓库。</div>
+      <div class="setgrid">
+        <div class="pgroup"><label class="fl">服务商预设</label>
+          <select id="provSel">
+            <option value="">自定义…</option>
+            <option value="deepseek">DeepSeek(直连✓ 便宜好用)</option>
+            <option value="openrouter">OpenRouter(直连✓ 万模型)</option>
+            <option value="siliconflow">SiliconFlow 硅基流动(直连✓)</option>
+            <option value="openai">OpenAI 官方</option>
+            <option value="gemini">Google Gemini(OpenAI兼容)</option>
+            <option value="zhipu">智谱 GLM</option>
+            <option value="moonshot">Moonshot Kimi</option>
+            <option value="ollama">本机 Ollama(免key)</option>
+          </select></div>
+        <div class="pgroup"><label class="fl">API Base URL(以 /v1 结尾居多)</label><input type="text" id="cfgBase" placeholder="https://api.deepseek.com/v1"></div>
+        <div class="pgroup"><label class="fl">API Key(只存本机浏览器)</label><input type="password" id="cfgKey" placeholder="sk-…"></div>
+        <div class="pgroup"><label class="fl">文本模型</label><input type="text" id="cfgModel" placeholder="deepseek-chat"></div>
+        <div class="pgroup"><label class="fl">出图模型(可选,API直出图用)</label><input type="text" id="cfgImgModel" placeholder="gpt-image-1 / 留空"></div>
+        <div class="pgroup"><label class="fl">出图 API Base(可选,留空=同上)</label><input type="text" id="cfgImgBase" placeholder="文本/出图可用不同服务商"></div>
+        <div class="pgroup"><label class="fl">出图 API Key(可选,留空=同上)</label><input type="password" id="cfgImgKey" placeholder="sk-…"></div>
+        <div class="pgroup"><label class="fl">镜像站地址(一键生图跳转)</label><input type="text" id="cfgMirror" placeholder="本地版自动带出;其他设备可手填"></div>
+      </div>
+      <div class="krow" style="margin-top:14px">
+        <button class="btn2" id="cfgSave">保存设置</button>
+        <button class="btn2" id="cfgTest">测试连接</button>
+        <button class="btn2" id="cfgLink">生成手机/他机配置链接</button>
+        <label style="font-size:12px;color:var(--dim);display:flex;align-items:center;gap:5px"><input type="checkbox" id="cfgLinkKey" style="width:auto">链接包含密钥(仅自用)</label>
+      </div>
+      <div class="linkbox" id="linkbox"></div>
+      <div class="hint">「配置链接」打开一次即自动导入设置——把它存进手机书签,手机端零手输。</div>
+    </div>
+  </div>
+
+  <!-- 提示词库 -->
+  <div class="card">
+    <div class="kbar" id="libbar"><span class="t">🧰 提示词库 · 精选 <span id="libcount" style="color:var(--dim);font-weight:400;font-size:12.5px"></span></span><span id="libarrow" style="color:var(--dim)">▸</span></div>
+    <div id="libbody" style="display:none">
+      <div class="kfolder">搜罗自 Higgsfield 官方 / 高星 GitHub 库 / GPT Image 2 模板集,人工甄别后收录。点条目展开:可<b>复制</b>、<b>加进场景框</b>(运镜/风格类)、或<b>去镜像站生图</b>(模板类)。</div>
+      <input type="text" id="libSearch" placeholder="搜索:运镜 / 海报 / 角色 / bullet time / 绘本…">
+      <div class="chips" id="libChips"></div>
+      <div class="libmeta" id="libMeta"></div>
+      <div id="libList"></div>
+    </div>
+  </div>
+
+  <!-- 创作者技法库 -->
+  <div class="card">
+    <div class="kbar" id="kbar"><span class="t">📚 创作者技法库 <span id="kcount" style="color:var(--dim);font-weight:400;font-size:12.5px"></span></span><span id="karrow" style="color:var(--dim)">▾</span></div>
+    <div id="kbody">
+      <div class="kfolder" id="kfolderHint">把下载的高手提示词(.md/.txt)丢进 <code>~/kushim-cc/storyboard-app/knowledge/</code>,点「刷新」即可。打开某份开关 → 之后生成都会融入这位高手的技法。点卡名看中文简介。</div>
+      <div id="klist"></div>
+      <div class="krow">
+        <button class="btn2" id="krefresh">刷新</button>
+        <button class="btn2" id="kanalyze" disabled>分析高手范式</button>
+        <span id="kon" style="color:var(--dim);font-size:12px"></span>
+      </div>
+      <div id="kreport" style="display:none;margin-top:14px">
+        <pre class="out" id="kreportOut" style="max-height:48vh"></pre>
+        <div class="krow"><button class="btn2" id="ksave">把分析存为技法卡</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 历史记忆 -->
+  <div class="card">
+    <div class="kbar" id="hbar"><span class="t">🕘 历史记忆 <span id="hcount" style="color:var(--dim);font-weight:400;font-size:12.5px"></span></span><span id="harrow" style="color:var(--dim)">▾</span></div>
+    <div id="hbody">
+      <div class="kfolder" id="hfolderHint">每次生成都自动存档。点条目展开看全文,可「重用输入」或删除。</div>
+      <div id="hlist"></div>
+      <div class="krow">
+        <button class="btn2" id="hrefresh">刷新</button>
+        <button class="btn2" id="hclear">清空全部</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="result card" id="result">
+    <div class="rhead"><span class="t" id="rtitle">分镜 · 可复制到目标平台</span>
+      <div class="racts">
+        <button class="ract" id="copyBtn">复制</button>
+        <button class="ract" id="mirrorBtn">🖼 去镜像站生图</button>
+        <button class="ract" id="imgBtn">🎨 API 出图</button>
+        <button class="ract" id="saveBtn">导出 .md</button>
+      </div></div>
+    <pre class="out" id="out"></pre>
+    <div id="imgpanel">
+      <label class="fl">出图提示词(默认取第 1 镜,可改)</label>
+      <textarea id="imgPrompt"></textarea>
+      <div class="krow" style="margin-top:10px">
+        <select id="imgSize"><option value="1024x1024">1024×1024</option><option value="1536x1024" selected>1536×1024 横</option><option value="1024x1536">1024×1536 竖</option></select>
+        <button class="btn2" id="imgGo">生成图片</button>
+        <span class="hint" style="margin:0">走「设置」里的出图模型;失败多因该服务商无图像接口。</span>
+      </div>
+      <div class="imgwrap" id="imgs"></div>
+    </div>
+  </div>
+
+  <div class="foot">分镜工坊 v4 · 本地模式数据不出门;云端模式密钥只存你自己的浏览器 · 分镜免费;拿去生成图/视频会消耗对应平台额度,请自行斟酌</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var aspect="16:9",platform="universal",engine="local",ready=false,busy=false;
+  var MODE="probe";           // local=有Flask后端 static=纯静态(Pages/别的电脑)
+  var BUNDLE=null,LIB=null,MIRROR_DEFAULT="";
+  var genImg=$("genImg");
+  var GENS=[$("genZh"),$("genEn"),$("genBoth")];
+  var ALLB=GENS.concat([genImg]);
+  var LBL={zh:"一键中文",en:"一键英文",both:"中英双语",img:"🖼 生图分镜(ChatGPT Image 2)· 角色圣经锁一致"};
+  function toast(m){var t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(function(){t.classList.remove("show")},2200)}
+  function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+
+  // ===== 配置(localStorage) + #cfg 链接导入 =====
+  var cfg={};
+  try{cfg=JSON.parse(localStorage.getItem("sb_cfg_v1")||"{}")}catch(e){cfg={}}
+  function saveCfg(){localStorage.setItem("sb_cfg_v1",JSON.stringify(cfg))}
+  (function importHash(){
+    if(location.hash.indexOf("#cfg=")===0){
+      try{
+        var obj=JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(5)))));
+        ["apiBase","apiKey","model","imgModel","imgBase","imgKey","mirror"].forEach(function(k){if(obj[k])cfg[k]=obj[k]});
+        saveCfg();history.replaceState(null,"",location.pathname+location.search);
+        setTimeout(function(){toast("✓ 已导入配置链接")},400);
+      }catch(e){}
+    }
+  })();
+  var PROVIDERS={
+    deepseek:{base:"https://api.deepseek.com/v1",model:"deepseek-chat"},
+    openrouter:{base:"https://openrouter.ai/api/v1",model:"google/gemini-2.5-flash"},
+    siliconflow:{base:"https://api.siliconflow.cn/v1",model:"deepseek-ai/DeepSeek-V3"},
+    openai:{base:"https://api.openai.com/v1",model:"gpt-5-mini",img:"gpt-image-1"},
+    gemini:{base:"https://generativelanguage.googleapis.com/v1beta/openai",model:"gemini-2.5-flash"},
+    zhipu:{base:"https://open.bigmodel.cn/api/paas/v4",model:"glm-4.6"},
+    moonshot:{base:"https://api.moonshot.cn/v1",model:"kimi-k2-turbo-preview"},
+    ollama:{base:"http://127.0.0.1:11434/v1",model:"qwen3:14b"}
+  };
+  function cfgToUI(){$("cfgBase").value=cfg.apiBase||"";$("cfgKey").value=cfg.apiKey||"";
+    $("cfgModel").value=cfg.model||"";$("cfgImgModel").value=cfg.imgModel||"";
+    $("cfgImgBase").value=cfg.imgBase||"";$("cfgImgKey").value=cfg.imgKey||"";$("cfgMirror").value=cfg.mirror||""}
+  function uiToCfg(){cfg.apiBase=$("cfgBase").value.trim().replace(/\/+$/,"");cfg.apiKey=$("cfgKey").value.trim();
+    cfg.model=$("cfgModel").value.trim();cfg.imgModel=$("cfgImgModel").value.trim();
+    cfg.imgBase=$("cfgImgBase").value.trim().replace(/\/+$/,"");cfg.imgKey=$("cfgImgKey").value.trim();
+    cfg.mirror=$("cfgMirror").value.trim();saveCfg()}
+  cfgToUI();
+  $("provSel").addEventListener("change",function(){var p=PROVIDERS[this.value];if(!p)return;
+    $("cfgBase").value=p.base;if(!$("cfgModel").value||confirm("把模型填成推荐值 "+p.model+" ?"))$("cfgModel").value=p.model;
+    if(p.img&&!$("cfgImgModel").value)$("cfgImgModel").value=p.img;});
+  $("cfgSave").addEventListener("click",function(){uiToCfg();toast("✓ 已保存(只存本浏览器)");refreshGen()});
+  $("cfgTest").addEventListener("click",function(){uiToCfg();if(!cfg.apiBase){toast("先填 API Base URL");return}
+    var b=this;b.disabled=true;b.textContent="测试中…";
+    fetch(cfg.apiBase+"/models",{headers:hAuth()}).then(function(r){
+      if(r.ok)return r.json().then(function(d){toast("✓ 连接成功"+(d.data?" · "+d.data.length+" 个模型":""))});
+      return r.text().then(function(t){toast("✗ HTTP "+r.status+" "+t.slice(0,80))});
+    }).catch(function(e){toast("✗ 连不上(密钥/网络/该商禁浏览器直连):"+String(e).slice(0,60))})
+    .finally(function(){b.disabled=false;b.textContent="测试连接"})});
+  $("cfgLink").addEventListener("click",function(){uiToCfg();
+    var obj={apiBase:cfg.apiBase,model:cfg.model,imgModel:cfg.imgModel,imgBase:cfg.imgBase,mirror:cfg.mirror};
+    if($("cfgLinkKey").checked){obj.apiKey=cfg.apiKey;obj.imgKey=cfg.imgKey;}
+    var link=location.origin+location.pathname+"#cfg="+btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+    var box=$("linkbox");box.style.display="block";box.textContent=link;
+    (navigator.clipboard&&navigator.clipboard.writeText)?navigator.clipboard.writeText(link).then(function(){toast("✓ 链接已复制,存进手机书签即可")}):toast("请手动复制下方链接");});
+  $("setbar").addEventListener("click",function(){var b=$("setbody");var hide=b.style.display==="none";
+    b.style.display=hide?"block":"none";$("setarrow").textContent=hide?"▾":"▸"});
+  function hAuth(){var h={"Content-Type":"application/json"};if(cfg.apiKey)h["Authorization"]="Bearer "+cfg.apiKey;return h}
+
+  // ===== 模式探测 =====
+  function segSet(id,val){var box=$(id);[].forEach.call(box.children,function(b){b.classList.toggle("on",b.dataset.v===val)})}
+  function seg(id,set){$(id).addEventListener("click",function(e){if(e.target.tagName!=="BUTTON"||e.target.classList.contains("dis"))return;
+    set(e.target.dataset.v);[].forEach.call(this.children,function(b){b.classList.toggle("on",b===e.target)})})}
+  seg("aspect",function(v){aspect=v}); seg("platform",function(v){platform=v});
+  var ENGINE_HINT={local:"⚡ 本地引擎:完全不过审、免费离线;中文/双语约 1–2 分钟(本地 14B)。",
+    claude:"🧠 Claude 引擎:画面感更强、中英一遍直出(约 20–40 秒);带审核判断、走 Claude 额度、需联网。",
+    api:"🌐 外接 API:任何电脑/手机可用,浏览器直连你在「设置」里填的服务商(约 10–40 秒),密钥不离开本机。"};
+  function canGen(){if(engine==="api")return !!(cfg.apiBase&&cfg.model);if(engine==="claude")return MODE==="local";return MODE==="local"&&ready}
+  function refreshGen(){if(!busy)ALLB.forEach(function(b){b.disabled=!canGen()});}
+  seg("engine",function(v){engine=v;refreshGen();$("genHint").textContent=ENGINE_HINT[v]+(canGen()?"":(v==="api"?" ← 先到「设置」填 API":""));});
+
+  function enterStatic(){
+    MODE="static";
+    $("modeTag").textContent="🌐 云端模式 · 外接 API 生成";
+    var p=$("statusPill");p.className="pill cloud";$("statusTxt").textContent="静态版 · 无本机引擎";
+    [].forEach.call($("engine").children,function(b){
+      if(b.dataset.v!=="api"){b.classList.add("dis");b.classList.remove("on");b.title="需在 Mac 本地运行才可用"}
+      else b.classList.add("on");
+    });
+    engine="api";$("genHint").textContent=ENGINE_HINT.api+(canGen()?"":" ← 先到「设置」填 API");
+    $("kfolderHint").innerHTML="静态版:技法卡打包自 Mac 本机,开关状态存在本浏览器;要增删卡片请回 Mac 更新后重新部署。";
+    $("hfolderHint").innerHTML="静态版:历史只存<b>本浏览器</b>(localStorage),换设备不共享。";
+    $("kanalyze").style.display="none";$("ksave").style.display="none";
+    if(!cfg.apiBase){var b=$("setbody");b.style.display="block";$("setarrow").textContent="▾"}
+    refreshGen();loadKn();loadHistory();
+  }
+  function enterLocal(s){
+    MODE="local";
+    $("modeTag").textContent="本地 14B · 完全离线 · 忠实不过审";
+    MIRROR_DEFAULT=s.mirror_url||"";
+    if(!cfg.mirror&&MIRROR_DEFAULT){cfg.mirror=MIRROR_DEFAULT;saveCfg();cfgToUI()}
+    function poll(){fetch("status").then(function(r){return r.json()}).then(function(st){
+      var p=$("statusPill"),t=$("statusTxt");
+      if(st.err){p.className="pill err";t.textContent="模型加载出错";$("genHint").textContent=st.err;return}
+      if(st.ready){ready=true;p.className="pill ready";t.textContent="就绪";refreshGen();
+        if(!busy)$("genHint").textContent=ENGINE_HINT[engine];}
+      else setTimeout(poll,1500);
+    }).catch(function(){setTimeout(poll,2000)})}
+    poll();refreshGen();loadKn();loadHistory();
+  }
+  (function probe(){
+    var ctl;try{ctl=AbortSignal.timeout(2500)}catch(e){ctl=undefined}
+    fetch("status",{signal:ctl}).then(function(r){if(!r.ok)throw 0;return r.json()})
+      .then(function(s){if(s&&s.mode==="local")enterLocal(s);else enterStatic()})
+      .catch(function(){enterStatic()});
+  })();
+
+  $("style").addEventListener("change",function(){$("styleCustom").style.display=this.value==="__custom"?"block":"none"});
+
+  // ===== 物料包(外接API引擎用:系统提示词+平台方言+技法卡) =====
+  function knEnabledMap(){try{return JSON.parse(localStorage.getItem("sb_kn_en")||"{}")}catch(e){return{}}}
+  function loadBundle(force){
+    if(BUNDLE&&!force)return Promise.resolve(BUNDLE);
+    return fetch("bundle.json").then(function(r){if(!r.ok)throw new Error("bundle.json 加载失败");return r.json()})
+      .then(function(b){
+        if(MODE==="static"){var ov=knEnabledMap();b.knowledge.forEach(function(k){if(ov.hasOwnProperty(k.name))k.enabled=!!ov[k.name]})}
+        BUNDLE=b;return b});
+  }
+  function knowledgeBlock(b){
+    var chosen=[],used=0,PER=2200,TOTAL=4200;
+    (b.knowledge||[]).forEach(function(it){
+      if(!it.enabled||used>=TOTAL)return;
+      var ex=(it.content||"").slice(0,PER);
+      if(used+ex.length>TOTAL)ex=ex.slice(0,Math.max(0,TOTAL-used));
+      if(!ex)return;chosen.push("【技法:"+it.name+"】\n"+ex);used+=ex.length;
+    });
+    if(!chosen.length)return "";
+    return "\n\n【创作者技法参考 · 学习并融入以下高手的提示词风格与技巧(取其法,不照抄)】\n"+chosen.join("\n\n");
+  }
+
+  // ===== 外接 API 生成 =====
+  function apiChat(system,user){
+    var url=cfg.apiBase+"/chat/completions";
+    var payload={model:cfg.model,messages:[{role:"system",content:system},{role:"user",content:user}],temperature:0.6,max_tokens:2600};
+    return fetch(url,{method:"POST",headers:hAuth(),body:JSON.stringify(payload)})
+      .then(function(r){
+        if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+":"+t.slice(0,160))});
+        return r.json();
+      })
+      .then(function(d){var c=d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content;
+        if(!c)throw new Error("服务商返回空内容");return c.replace(/<think>[\s\S]*?<\/think>/g,"").trim();})
+      .catch(function(e){
+        if(e instanceof TypeError&&MODE==="local"){ // CORS/网络 → 本地兜底代转
+          return fetch("api_proxy",{method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({url:url,key:cfg.apiKey,payload:payload})})
+            .then(function(r){return r.json()})
+            .then(function(d){if(d.error)throw new Error(d.error);
+              var c=d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content;
+              if(!c)throw new Error("代转也拿不到内容");return c.replace(/<think>[\s\S]*?<\/think>/g,"").trim();});
+        }
+        if(e instanceof TypeError)throw new Error("网络/CORS 被拦:该服务商可能禁止浏览器直连,换 DeepSeek/OpenRouter/SiliconFlow 试试");
+        throw e;
+      });
+  }
+  var LANG_NOTE={en:"请输出英文分镜(English storyboard)。",
+    zh:"请直接输出【中文】分镜,按目标平台的中文公式书写,保留镜号,不要输出英文。",
+    both:"先输出英文分镜,再用一行『──────────── 中文版 ────────────』分隔,另起一段输出中文分镜(按目标平台中文公式)。"};
+  function apiGenerate(kind,lang){
+    var scene=$("scene").value.trim();
+    var st=$("style").value;if(st==="__custom")st=$("styleCustom").value.trim()||"cinematic realistic";
+    var shots=+$("shots").value||4;
+    return loadBundle(MODE==="local").then(function(b){
+      var sys,user;
+      if(kind==="image"){
+        sys=b.image_system+knowledgeBlock(b);
+        user="场景: "+scene+"\n镜头数量: "+shots+" 个\n整体风格: "+st+"\n画幅: "+aspect+"\n"
+          +"请输出 ChatGPT Image 2 生图分镜:先 CHARACTER BIBLE 角色圣经 + STYLE BIBLE 风格圣经,"
+          +"再逐镜英文生图 prompt(每镜把角色圣经原样嵌入以锁一致)。只输出分镜本身,不要前言解释。";
+      }else{
+        sys=b.system+knowledgeBlock(b)+(b.platforms[platform]||"");
+        user="场景: "+scene+"\n镜头数量: "+shots+" 个\n整体风格: "+st+"\n画幅: "+aspect+"\n"
+          +(LANG_NOTE[lang]||LANG_NOTE.both)+"\n只输出分镜本身:不要前言、不要解释。";
+      }
+      return apiChat(sys,user);
+    }).then(function(out){
+      recordHistory({kind:kind,engine:"api",platform:kind==="image"?"":platform,lang:kind==="image"?"":lang,
+        shots:shots,style:st,aspect:aspect,scene:scene,output:out});
+      return out;
+    });
+  }
+
+  // ===== 历史(双模式适配) =====
+  function lsHist(){try{return JSON.parse(localStorage.getItem("sb_hist_v1")||"[]")}catch(e){return[]}}
+  function lsHistSave(a){localStorage.setItem("sb_hist_v1",JSON.stringify(a.slice(0,200)))}
+  function recordHistory(rec){
+    if(MODE==="local"){
+      fetch("history/add",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(rec)})
+        .then(function(){loadHistory()}).catch(function(){});
+    }else{
+      var d=new Date(),z=function(n){return("0"+n).slice(-2)};
+      rec.id=Date.now()+"-"+Math.floor(Math.random()*1e4);
+      rec.ts=d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate())+" "+z(d.getHours())+":"+z(d.getMinutes());
+      var a=lsHist();a.unshift(rec);lsHistSave(a);loadHistory();
+    }
+  }
+  function histFetch(){return MODE==="local"
+    ?fetch("history").then(function(r){return r.json()}).then(function(d){return d.items||[]})
+    :Promise.resolve(lsHist())}
+  function histDelete(id){return MODE==="local"
+    ?fetch("history/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:id})})
+    :Promise.resolve(lsHistSave(lsHist().filter(function(x){return x.id!==id})))}
+  function histClear(){return MODE==="local"
+    ?fetch("history/clear",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"})
+    :Promise.resolve(lsHistSave([]))}
+
+  function setSeg(id,val,setter){var box=$(id);[].forEach.call(box.children,function(b){b.classList.toggle("on",b.dataset.v===val)});setter(val);}
+  function loadHistory(){histFetch().then(function(items){
+    var box=$("hlist");box.innerHTML="";
+    $("hcount").textContent=items.length?"("+items.length+" 条)":"(空)";
+    if(!items.length){box.innerHTML='<div style="color:var(--dim);font-size:13px;padding:3px 2px">还没有记录,生成一次就会出现在这里。</div>';return}
+    items.forEach(function(it){
+      var row=document.createElement("div");row.className="kitem";
+      var kind=it.kind==="image"?'<span class="hbadge v">🖼 生图</span>':'<span class="hbadge v">🎬 视频</span>';
+      var eng=it.engine==="claude"?'<span class="hbadge c">Claude</span>':(it.engine==="api"?'<span class="hbadge c">API</span>':'<span class="hbadge">本地</span>');
+      var plat=it.platform?'<span class="hbadge">'+esc(it.platform)+'</span>':'';
+      var sc=it.scene||"",snip=esc(sc.slice(0,42))+(sc.length>42?"…":"");
+      row.innerHTML='<div class="khead">'+kind+eng+plat
+        +'<span class="kn" title="'+esc(sc)+'">'+snip+'</span>'
+        +'<span style="color:var(--dim);font-size:11px;margin-right:8px">'+esc(it.ts||"")+'</span><span class="car">▸</span></div>'
+        +'<div class="kdetail"><div class="hmeta">镜数 '+esc(String(it.shots||"-"))+' · 风格 '+esc(it.style||"-")+' · 画幅 '+esc(it.aspect||"-")+(it.lang?' · 语言 '+esc(it.lang):'')+'</div>'
+        +'<div class="hmeta" style="color:var(--muted)">📝 输入:'+esc(sc)+'</div>'
+        +'<pre class="hpre">'+esc(it.output||"")+'</pre>'
+        +'<div class="krow"><button class="btn3" data-act="reuse">↺ 重用输入</button>'
+        +'<button class="btn3" data-act="copy">📋 复制结果</button>'
+        +'<button class="btn3" data-act="del" style="color:var(--err)">🗑 删除</button></div></div>';
+      var det=row.querySelector(".kdetail"),car=row.querySelector(".car");
+      function tog(){var o=det.style.display==="block";det.style.display=o?"none":"block";car.textContent=o?"▸":"▾"}
+      row.querySelector(".kn").addEventListener("click",tog);car.addEventListener("click",tog);
+      row.querySelector('[data-act="reuse"]').addEventListener("click",function(){
+        $("scene").value=sc;
+        if(it.platform)setSeg("platform",it.platform,function(v){platform=v});
+        if(it.engine&&!(MODE==="static"&&it.engine!=="api")){setSeg("engine",it.engine,function(v){engine=v});refreshGen();$("genHint").textContent=ENGINE_HINT[engine];}
+        if(it.aspect)setSeg("aspect",it.aspect,function(v){aspect=v});
+        if(it.shots)$("shots").value=it.shots;
+        if(it.style){var sel=$("style"),found=false;[].forEach.call(sel.options,function(o){if(o.value===it.style)found=true});
+          if(found){sel.value=it.style;$("styleCustom").style.display="none";}else{sel.value="__custom";$("styleCustom").style.display="block";$("styleCustom").value=it.style;}}
+        window.scrollTo({top:0,behavior:"smooth"});$("scene").focus();toast("已重用这条的输入");});
+      row.querySelector('[data-act="copy"]').addEventListener("click",function(){cp(it.output||"")});
+      row.querySelector('[data-act="del"]').addEventListener("click",function(){
+        histDelete(it.id).then(function(){toast("已删除");loadHistory();});});
+      box.appendChild(row);
+    });
+  }).catch(function(){})}
+  $("hrefresh").addEventListener("click",function(){loadHistory();toast("已刷新")});
+  $("hclear").addEventListener("click",function(){if(!confirm("确定清空全部历史记忆?此操作不可恢复。"))return;
+    histClear().then(function(){toast("已清空");loadHistory();});});
+  $("hbar").addEventListener("click",function(){var b=$("hbody");var hide=b.style.display==="none";b.style.display=hide?"block":"none";$("harrow").textContent=hide?"▾":"▸"});
+
+  // ===== 技法库(双模式) =====
+  function knItems(){
+    if(MODE==="local")return fetch("knowledge").then(function(r){return r.json()}).then(function(d){return d.items||[]});
+    return loadBundle().then(function(b){return b.knowledge.map(function(k){
+      return {name:k.name,enabled:k.enabled,summary:k.summary,scenarios:k.scenarios,platforms:k.platforms,size:(k.content||"").length}})});
+  }
+  function loadKn(){knItems().then(function(items){
+    var box=$("klist");box.innerHTML="";var on=0;
+    items.forEach(function(it){if(it.enabled)on++;
+      var row=document.createElement("div");row.className="kitem";
+      var detail=it.summary
+        ? '<div class="kdetail"><div><span class="lab">简介:</span> '+esc(it.summary)+'</div>'
+          +(it.scenarios?'<div style="margin-top:5px"><span class="lab">适用场景:</span> '+esc(it.scenarios)+'</div>':'')
+          +(it.platforms?'<div style="margin-top:5px"><span class="lab">适用平台:</span> '+esc(it.platforms)+'</div>':'')+'</div>'
+        : '<div class="kdetail"><span style="color:var(--dim)">（暂无简介）</span>'+(MODE==="local"?'<button class="btn3" data-sum="'+esc(it.name)+'">本地生成简介</button>':'')+'</div>';
+      row.innerHTML='<div class="khead"><label class="sw"><input type="checkbox" '+(it.enabled?"checked":"")+'><span class="tk"></span></label>'
+        +'<span class="kn">'+esc(it.name)+'</span><span class="ks" style="color:var(--dim);font-size:11.5px">'+Math.round(it.size/1024)+'KB</span>'
+        +'<span class="car">▸</span></div>'+detail;
+      var det=row.querySelector(".kdetail");
+      function tog(){var open=det.style.display==="block";det.style.display=open?"none":"block";row.querySelector(".car").textContent=open?"▸":"▾"}
+      row.querySelector(".kn").addEventListener("click",tog); row.querySelector(".car").addEventListener("click",tog);
+      row.querySelector("input").addEventListener("change",function(){
+        if(MODE==="local"){
+          fetch("knowledge/toggle",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:it.name,enabled:this.checked})}).then(loadKn)
+        }else{
+          var ov=knEnabledMap();ov[it.name]=this.checked;localStorage.setItem("sb_kn_en",JSON.stringify(ov));
+          if(BUNDLE)BUNDLE.knowledge.forEach(function(k){if(k.name===it.name)k.enabled=ov[it.name]});
+          loadKn();
+        }});
+      var sb=row.querySelector("[data-sum]");
+      if(sb)sb.addEventListener("click",function(){var b=this;b.disabled=true;b.textContent="生成中…";
+        fetch("summarize",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:it.name})})
+        .then(function(r){return r.json()}).then(function(x){if(x.error){toast(x.error);b.disabled=false;b.textContent="本地生成简介"}else{toast("简介已生成");loadKn()}})});
+      box.appendChild(row);
+    });
+    $("kcount").textContent=(items.length?"("+items.length+"份, 启用 "+on+")":"(空)");
+    $("kanalyze").disabled=on<1; $("kon").textContent=on>0?(on+" 份技法将融入生成"):"";
+  })}
+  $("krefresh").addEventListener("click",function(){BUNDLE=null;loadKn();toast("已刷新")});
+  $("kbar").addEventListener("click",function(){var b=$("kbody");var hide=b.style.display==="none";
+    b.style.display=hide?"block":"none";$("karrow").textContent=hide?"▾":"▸"});
+  $("kanalyze").addEventListener("click",function(){if(this.disabled)return;var btn=this;btn.disabled=true;btn.textContent="分析中(约1-2分钟)…";
+    fetch("analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).then(function(r){return r.json()}).then(function(d){
+      btn.disabled=false;btn.textContent="分析高手范式";if(d.error){toast(d.error);return}
+      $("kreportOut").textContent=d.output;$("kreport").style.display="block";$("kreport").scrollIntoView({behavior:"smooth",block:"nearest"})
+    }).catch(function(){btn.disabled=false;btn.textContent="分析高手范式";toast("分析失败")})});
+  $("ksave").addEventListener("click",function(){var txt=$("kreportOut").textContent;if(!txt)return;
+    fetch("save_knowledge",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:"高手范式分析-提炼",content:"# 高手分镜范式 · 分析提炼\n\n"+txt})})
+    .then(function(r){return r.json()}).then(function(d){if(d.error){toast(d.error)}else{toast("已存为技法卡");loadKn()}})});
+
+  // ===== 提示词库 =====
+  var libCat="all",libQ="";
+  function favMap(){try{return JSON.parse(localStorage.getItem("sb_fav_v1")||"{}")}catch(e){return{}}}
+  function loadLib(){
+    if(LIB)return Promise.resolve(LIB);
+    return fetch("library.json").then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(d){LIB=d;return d})
+      .catch(function(){LIB={cats:[],items:[]};return LIB});
+  }
+  function renderChips(){
+    var box=$("libChips");box.innerHTML="";
+    var mk=function(id,name){var c=document.createElement("button");c.className="chip"+(libCat===id?" on":"");c.textContent=name;
+      c.addEventListener("click",function(){libCat=id;renderChips();renderLib()});box.appendChild(c)};
+    mk("all","全部");mk("fav","⭐ 收藏");
+    (LIB.cats||[]).forEach(function(c){mk(c.id,c.name)});
+  }
+  var INSERTABLE={"video-camera":1,"video-vfx":1,"style-bank":1};
+  function renderLib(){
+    var box=$("libList");box.innerHTML="";
+    var fav=favMap(),q=libQ.toLowerCase();
+    var items=(LIB.items||[]).filter(function(it){
+      if(libCat==="fav"&&!fav[it.id])return false;
+      if(libCat!=="all"&&libCat!=="fav"&&it.cat!==libCat)return false;
+      if(q){var hay=(it.name+" "+(it.desc||"")+" "+(it.prompt||"")+" "+(it.tags||[]).join(" ")).toLowerCase();
+        if(hay.indexOf(q)<0)return false}
+      return true;
+    });
+    var CAP=80,shown=items.slice(0,CAP);
+    $("libMeta").textContent="匹配 "+items.length+" 条"+(items.length>CAP?" · 只显示前 "+CAP+" 条,请用搜索缩小范围":"");
+    shown.forEach(function(it){
+      var row=document.createElement("div");row.className="kitem";
+      var starOn=!!fav[it.id];
+      row.innerHTML='<div class="khead"><span class="star'+(starOn?" on":"")+'">'+(starOn?"★":"☆")+'</span>'
+        +'<span class="kn">'+esc(it.name)+'</span>'
+        +(it.plat?'<span class="hbadge" style="flex:none">'+esc(it.plat)+'</span>':'')
+        +'<span class="car">▸</span></div>'
+        +'<div class="kdetail">'
+        +(it.desc?'<div style="margin-top:8px">'+esc(it.desc)+'</div>':'')
+        +((it.tags&&it.tags.length)?'<div style="margin-top:6px">'+it.tags.map(function(t){return '<span class="hbadge">'+esc(t)+'</span>'}).join("")+'</div>':'')
+        +'<pre class="hpre" style="margin-top:9px">'+esc(it.prompt||"")+'</pre>'
+        +(it.src?'<div class="hmeta">来源:'+esc(it.src)+'</div>':'')
+        +'<div class="krow"><button class="btn3" data-act="copy">📋 复制</button>'
+        +(INSERTABLE[it.cat]?'<button class="btn3" data-act="ins">⤵ 加进场景框</button>':'')
+        +'<button class="btn3" data-act="mir">🖼 镜像站生图</button></div></div>';
+      var det=row.querySelector(".kdetail"),car=row.querySelector(".car");
+      function tog(){var o=det.style.display==="block";det.style.display=o?"none":"block";car.textContent=o?"▸":"▾"}
+      row.querySelector(".kn").addEventListener("click",tog);car.addEventListener("click",tog);
+      row.querySelector(".star").addEventListener("click",function(){
+        var f=favMap();if(f[it.id])delete f[it.id];else f[it.id]=1;
+        localStorage.setItem("sb_fav_v1",JSON.stringify(f));renderLib();});
+      row.querySelector('[data-act="copy"]').addEventListener("click",function(){cp(it.prompt||"")});
+      var ins=row.querySelector('[data-act="ins"]');
+      if(ins)ins.addEventListener("click",function(){
+        var t=$("scene");t.value=(t.value?t.value.replace(/\s+$/,"")+"\n":"")+"【技法参考】"+it.name+":"+(it.prompt||"");
+        window.scrollTo({top:0,behavior:"smooth"});toast("已加进场景框,生成时会参考")});
+      row.querySelector('[data-act="mir"]').addEventListener("click",function(){cp(it.prompt||"",true);openMirror()});
+      box.appendChild(row);
+    });
+    if(!shown.length)box.innerHTML='<div style="color:var(--dim);font-size:13px;padding:3px 2px">没有匹配条目。</div>';
+  }
+  $("libbar").addEventListener("click",function(){var b=$("libbody");var hide=b.style.display==="none";
+    b.style.display=hide?"block":"none";$("libarrow").textContent=hide?"▾":"▸";
+    if(hide)loadLib().then(function(){renderChips();renderLib();
+      $("libcount").textContent="("+(LIB.items||[]).length+" 条)"})});
+  $("libSearch").addEventListener("input",function(){libQ=this.value.trim();renderLib()});
+  loadLib().then(function(){$("libcount").textContent="("+(LIB.items||[]).length+" 条)"});
+
+  // ===== 镜像站一键 =====
+  function openMirror(){
+    var u=cfg.mirror||MIRROR_DEFAULT;
+    if(!u){toast("先在「设置」里填镜像站地址");var b=$("setbody");b.style.display="block";$("setarrow").textContent="▾";return}
+    window.open(u,"_blank");
+  }
+  $("mirrorBtn").addEventListener("click",function(){cp($("out").textContent,true);openMirror()});
+
+  // ===== 生成(三按钮+生图分镜) =====
+  var timer=null,t0=0;
+  function setBusy(b,btn){busy=b;ALLB.forEach(function(g){g.disabled=b||!canGen()});
+    if(b){t0=Date.now();timer=setInterval(function(){var s=Math.floor((Date.now()-t0)/1000);
+      btn.innerHTML='<span class="spin"></span>'+Math.floor(s/60)+":"+("0"+(s%60)).slice(-2)},500);}
+    else{clearInterval(timer);GENS.forEach(function(g){g.textContent=LBL[g.dataset.lang]});genImg.textContent=LBL.img}}
+  function showResult(title,out){$("rtitle").textContent=title;$("out").textContent=out;
+    $("imgpanel").style.display="none";$("imgs").innerHTML="";
+    $("result").style.display="block";$("result").scrollIntoView({behavior:"smooth",block:"start"});}
+  GENS.forEach(function(btn){btn.addEventListener("click",function(){
+    if(busy||!canGen())return;var scene=$("scene").value.trim();
+    if(!scene){toast("先说一个场景吧");$("scene").focus();return}
+    var st=$("style").value;if(st==="__custom")st=$("styleCustom").value.trim()||"cinematic realistic";
+    setBusy(true,btn);
+    var done=function(out){setBusy(false,btn);showResult("分镜 · 可复制到目标平台",out);loadHistory()};
+    var fail=function(msg){setBusy(false,btn);toast("出错:"+msg)};
+    if(engine==="api"){apiGenerate("video",btn.dataset.lang).then(done).catch(function(e){fail(String(e.message||e).slice(0,200))});return}
+    fetch("generate",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({scene:scene,shots:+$("shots").value||4,style:st,aspect:aspect,platform:platform,lang:btn.dataset.lang,engine:engine})})
+    .then(function(r){return r.json()}).then(function(d){
+      if(d.error){fail(d.error);return}
+      done(d.output);
+    }).catch(function(){fail("生成失败,请重试")})})});
+
+  genImg.addEventListener("click",function(){
+    if(busy||!canGen())return;var scene=$("scene").value.trim();
+    if(!scene){toast("先说一个场景吧");$("scene").focus();return}
+    var st=$("style").value;if(st==="__custom")st=$("styleCustom").value.trim()||"cinematic realistic";
+    setBusy(true,genImg);
+    var done=function(out){setBusy(false,genImg);showResult("生图分镜 · ChatGPT Image 2 · 角色圣经锁一致",out);loadHistory()};
+    var fail=function(msg){setBusy(false,genImg);toast("出错:"+msg)};
+    if(engine==="api"){apiGenerate("image").then(done).catch(function(e){fail(String(e.message||e).slice(0,200))});return}
+    fetch("imageprompt",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({scene:scene,shots:+$("shots").value||4,style:st,aspect:aspect,engine:engine})})
+    .then(function(r){return r.json()}).then(function(d){
+      if(d.error){fail(d.error);return}
+      done(d.output);
+    }).catch(function(){fail("生成失败,请重试")})});
+
+  // ===== 结果操作 =====
+  function cp(txt,quiet){if(!txt)return;
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(function(){if(!quiet)toast("已复制");else toast("提示词已复制,去镜像站粘贴即可")},function(){fb(txt)});else fb(txt)}
+  function fb(txt){var ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("已复制")}catch(e){toast("复制失败")}document.body.removeChild(ta)}
+  $("copyBtn").addEventListener("click",function(){cp($("out").textContent)});
+  $("saveBtn").addEventListener("click",function(){var txt=$("out").textContent;if(!txt)return;
+    var d=new Date(),z=function(n){return("0"+n).slice(-2)};
+    var name="分镜_"+d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+"_"+z(d.getHours())+z(d.getMinutes())+".md";
+    var blob=new Blob(["# 分镜 · "+$("scene").value.trim()+"\n\n```\n"+txt+"\n```\n"],{type:"text/markdown"});
+    var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href)},1000);toast("已导出 "+name)});
+
+  // ===== API 直出图(实验) =====
+  function firstPrompt(txt){
+    var m=txt.match(/^\s*S1[::]\s*(.+)$/m); if(m)return m[1].trim();
+    m=txt.match(/\[S1\]\s*([\s\S]*?)(?=\n\s*\[S2\]|\n\n|$)/); if(m)return m[1].trim().replace(/\n+/g," ");
+    return txt.trim().slice(0,1500);
+  }
+  $("imgBtn").addEventListener("click",function(){
+    var p=$("imgpanel");var show=p.style.display!=="block";
+    p.style.display=show?"block":"none";
+    if(show&&!$("imgPrompt").value)$("imgPrompt").value=firstPrompt($("out").textContent);
+  });
+  $("imgGo").addEventListener("click",function(){
+    var iBase=cfg.imgBase||cfg.apiBase,iKey=cfg.imgKey||cfg.apiKey;
+    if(!iBase){toast("先到「设置」填 API");return}
+    var prompt=$("imgPrompt").value.trim();if(!prompt){toast("出图提示词是空的");return}
+    var btn=this;btn.disabled=true;btn.textContent="生成中(约10-60秒)…";
+    var url=iBase+"/images/generations";
+    var payload={model:cfg.imgModel||"gpt-image-1",prompt:prompt,size:$("imgSize").value,n:1};
+    var render=function(d){
+      var arr=(d&&d.data)||[];if(!arr.length)throw new Error("没返回图片");
+      arr.forEach(function(im){
+        var img=document.createElement("img");
+        img.src=im.b64_json?("data:image/png;base64,"+im.b64_json):(im.url||"");
+        $("imgs").appendChild(img);
+      });toast("✓ 出图完成,长按/右键可保存");
+    };
+    var ih={"Content-Type":"application/json"};if(iKey)ih["Authorization"]="Bearer "+iKey;
+    fetch(url,{method:"POST",headers:ih,body:JSON.stringify(payload)})
+      .then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("HTTP "+r.status+":"+t.slice(0,140))});return r.json()})
+      .then(render)
+      .catch(function(e){
+        if(e instanceof TypeError&&MODE==="local"){
+          return fetch("api_proxy",{method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({url:url,key:iKey,payload:payload})})
+            .then(function(r){return r.json()}).then(function(d){if(d.error)throw new Error(d.error);render(d)});
+        }
+        throw e;
+      })
+      .catch(function(e){toast("出图失败:"+String(e.message||e).slice(0,160))})
+      .finally(function(){btn.disabled=false;btn.textContent="生成图片"});
+  });
+})();
+</script>
+</body>
+</html>
