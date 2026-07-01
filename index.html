@@ -301,10 +301,12 @@
   var cfg={};
   try{cfg=JSON.parse(localStorage.getItem("sb_cfg_v1")||"{}")}catch(e){cfg={}}
   function saveCfg(){localStorage.setItem("sb_cfg_v1",JSON.stringify(cfg))}
+  function safeUrl(u){try{var p=new URL(u);return(p.protocol==="https:"||p.protocol==="http:")?p.href:""}catch(e){return ""}}
   (function importHash(){
     if(location.hash.indexOf("#cfg=")===0){
       try{
         var obj=JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(5)))));
+        ["mirror","apiBase","imgBase"].forEach(function(k){if(obj[k])obj[k]=safeUrl(obj[k])});
         ["apiBase","apiKey","model","imgModel","imgBase","imgKey","mirror"].forEach(function(k){if(obj[k])cfg[k]=obj[k]});
         saveCfg();history.replaceState(null,"",location.pathname+location.search);
         setTimeout(function(){toast("✓ 已导入配置链接")},400);
@@ -327,7 +329,7 @@
   function uiToCfg(){cfg.apiBase=$("cfgBase").value.trim().replace(/\/+$/,"");cfg.apiKey=$("cfgKey").value.trim();
     cfg.model=$("cfgModel").value.trim();cfg.imgModel=$("cfgImgModel").value.trim();
     cfg.imgBase=$("cfgImgBase").value.trim().replace(/\/+$/,"");cfg.imgKey=$("cfgImgKey").value.trim();
-    cfg.mirror=$("cfgMirror").value.trim();saveCfg()}
+    cfg.mirror=safeUrl($("cfgMirror").value.trim());saveCfg()}
   cfgToUI();
   $("provSel").addEventListener("change",function(){var p=PROVIDERS[this.value];if(!p)return;
     $("cfgBase").value=p.base;if(!$("cfgModel").value||confirm("把模型填成推荐值 "+p.model+" ?"))$("cfgModel").value=p.model;
@@ -657,8 +659,8 @@
 
   // ===== 镜像站一键 =====
   function openMirror(){
-    var u=cfg.mirror||MIRROR_DEFAULT;
-    if(!u){toast("先在「设置」里填镜像站地址");var b=$("setbody");b.style.display="block";$("setarrow").textContent="▾";return}
+    var u=safeUrl(cfg.mirror||MIRROR_DEFAULT);
+    if(!u){toast("先在「设置」里填镜像站地址(需 http/https)");var b=$("setbody");b.style.display="block";$("setarrow").textContent="▾";return}
     window.open(u,"_blank");
   }
   $("mirrorBtn").addEventListener("click",function(){cp($("out").textContent,true);openMirror()});
