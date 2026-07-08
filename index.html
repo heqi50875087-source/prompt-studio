@@ -137,7 +137,7 @@
         <button data-v="universal" class="on">通用</button>
         <button data-v="jimeng">即梦</button>
         <button data-v="xiaoyunque">小云雀</button>
-        <button data-v="gemini">Gemini / Veo</button>
+        
       </div>
     </div>
 
@@ -181,7 +181,7 @@
 
   <!-- 设置 -->
   <div class="card">
-    <div class="kbar" id="setbar"><span class="t">⚙️ 设置 · 外接 API 与镜像站</span><span id="setarrow" style="color:var(--dim)">▸</span></div>
+    <div class="kbar" id="setbar"><span class="t">⚙️ 设置 · 外接 API</span><span id="setarrow" style="color:var(--dim)">▸</span></div>
     <div id="setbody" style="display:none">
       <div class="kfolder">外接 API 让本工具在<b>任何电脑 / 手机</b>都能用:填一个 OpenAI 兼容接口(DeepSeek / OpenRouter / SiliconFlow / OpenAI / Gemini…)。密钥只存<b>本浏览器</b>(localStorage),不上传、不进代码仓库。</div>
       <div class="setgrid">
@@ -203,7 +203,7 @@
         <div class="pgroup"><label class="fl">出图模型(可选,API直出图用)</label><input type="text" id="cfgImgModel" placeholder="gpt-image-1 / 留空"></div>
         <div class="pgroup"><label class="fl">出图 API Base(可选,留空=同上)</label><input type="text" id="cfgImgBase" placeholder="文本/出图可用不同服务商"></div>
         <div class="pgroup"><label class="fl">出图 API Key(可选,留空=同上)</label><input type="password" id="cfgImgKey" placeholder="sk-…"></div>
-        <div class="pgroup"><label class="fl">镜像站地址(一键生图跳转)</label><input type="text" id="cfgMirror" placeholder="本地版自动带出;其他设备可手填"></div>
+        
       </div>
       <div class="krow" style="margin-top:14px">
         <button class="btn2" id="cfgSave">保存设置</button>
@@ -220,7 +220,7 @@
   <div class="card">
     <div class="kbar" id="libbar"><span class="t">🧰 提示词库 · 精选 <span id="libcount" style="color:var(--dim);font-weight:400;font-size:12.5px"></span></span><span id="libarrow" style="color:var(--dim)">▸</span></div>
     <div id="libbody" style="display:none">
-      <div class="kfolder">搜罗自 Higgsfield 官方 / 高星 GitHub 库 / GPT Image 2 模板集,人工甄别后收录。点条目展开:可<b>复制</b>、<b>加进场景框</b>(运镜/风格类)、或<b>去镜像站生图</b>(模板类)。</div>
+      <div class="kfolder">搜罗自 Higgsfield 官方预设、高星开源库与一线实战沉淀,人工甄别后收录。点条目展开:可<b>复制</b>、或<b>加进场景框</b>(运镜/风格类)。</div>
       <input type="text" id="libSearch" placeholder="搜索:运镜 / 海报 / 角色 / bullet time / 绘本…">
       <div class="chips" id="libChips"></div>
       <div class="libmeta" id="libMeta"></div>
@@ -263,7 +263,7 @@
     <div class="rhead"><span class="t" id="rtitle">分镜 · 可复制到目标平台</span>
       <div class="racts">
         <button class="ract" id="copyBtn">复制</button>
-        <button class="ract" id="mirrorBtn">🖼 去镜像站生图</button>
+        
         <button class="ract" id="imgBtn">🎨 API 出图</button>
         <button class="ract" id="saveBtn">导出 .md</button>
       </div></div>
@@ -289,7 +289,7 @@
   var $=function(id){return document.getElementById(id)};
   var aspect="16:9",platform="universal",engine="local",ready=false,busy=false;
   var MODE="probe";           // local=有Flask后端 static=纯静态(Pages/别的电脑)
-  var BUNDLE=null,LIB=null,MIRROR_DEFAULT="";
+  var BUNDLE=null,LIB=null;
   var genImg=$("genImg");
   var GENS=[$("genZh"),$("genEn"),$("genBoth")];
   var ALLB=GENS.concat([genImg]);
@@ -306,8 +306,8 @@
     if(location.hash.indexOf("#cfg=")===0){
       try{
         var obj=JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(5)))));
-        ["mirror","apiBase","imgBase"].forEach(function(k){if(obj[k])obj[k]=safeUrl(obj[k])});
-        ["apiBase","apiKey","model","imgModel","imgBase","imgKey","mirror"].forEach(function(k){if(obj[k])cfg[k]=obj[k]});
+        ["apiBase","imgBase"].forEach(function(k){if(obj[k])obj[k]=safeUrl(obj[k])});
+        ["apiBase","apiKey","model","imgModel","imgBase","imgKey"].forEach(function(k){if(obj[k])cfg[k]=obj[k]});
         saveCfg();history.replaceState(null,"",location.pathname+location.search);
         setTimeout(function(){toast("✓ 已导入配置链接")},400);
       }catch(e){}
@@ -325,11 +325,11 @@
   };
   function cfgToUI(){$("cfgBase").value=cfg.apiBase||"";$("cfgKey").value=cfg.apiKey||"";
     $("cfgModel").value=cfg.model||"";$("cfgImgModel").value=cfg.imgModel||"";
-    $("cfgImgBase").value=cfg.imgBase||"";$("cfgImgKey").value=cfg.imgKey||"";$("cfgMirror").value=cfg.mirror||""}
+    $("cfgImgBase").value=cfg.imgBase||"";$("cfgImgKey").value=cfg.imgKey||""}
   function uiToCfg(){cfg.apiBase=$("cfgBase").value.trim().replace(/\/+$/,"");cfg.apiKey=$("cfgKey").value.trim();
     cfg.model=$("cfgModel").value.trim();cfg.imgModel=$("cfgImgModel").value.trim();
     cfg.imgBase=$("cfgImgBase").value.trim().replace(/\/+$/,"");cfg.imgKey=$("cfgImgKey").value.trim();
-    cfg.mirror=safeUrl($("cfgMirror").value.trim());saveCfg()}
+    saveCfg()}
   cfgToUI();
   $("provSel").addEventListener("change",function(){var p=PROVIDERS[this.value];if(!p)return;
     $("cfgBase").value=p.base;if(!$("cfgModel").value||confirm("把模型填成推荐值 "+p.model+" ?"))$("cfgModel").value=p.model;
@@ -343,7 +343,7 @@
     }).catch(function(e){toast("✗ 连不上(密钥/网络/该商禁浏览器直连):"+String(e).slice(0,60))})
     .finally(function(){b.disabled=false;b.textContent="测试连接"})});
   $("cfgLink").addEventListener("click",function(){uiToCfg();
-    var obj={apiBase:cfg.apiBase,model:cfg.model,imgModel:cfg.imgModel,imgBase:cfg.imgBase,mirror:cfg.mirror};
+    var obj={apiBase:cfg.apiBase,model:cfg.model,imgModel:cfg.imgModel,imgBase:cfg.imgBase};
     if($("cfgLinkKey").checked){obj.apiKey=cfg.apiKey;obj.imgKey=cfg.imgKey;}
     var link=location.origin+location.pathname+"#cfg="+btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
     var box=$("linkbox");box.style.display="block";box.textContent=link;
@@ -357,7 +357,7 @@
   function seg(id,set){$(id).addEventListener("click",function(e){if(e.target.tagName!=="BUTTON"||e.target.classList.contains("dis"))return;
     set(e.target.dataset.v);[].forEach.call(this.children,function(b){b.classList.toggle("on",b===e.target)})})}
   seg("aspect",function(v){aspect=v}); seg("platform",function(v){platform=v});
-  var ENGINE_HINT={local:"⚡ 本地引擎:完全不过审、免费离线;中文/双语约 1–2 分钟(本地 14B)。",
+  var ENGINE_HINT={local:"⚡ 本地引擎:免费离线;中文/双语约 1–2 分钟(本地 14B)。",
     claude:"🧠 Claude 引擎:画面感更强、中英一遍直出(约 20–40 秒);带审核判断、走 Claude 额度、需联网。",
     api:"🌐 外接 API:任何电脑/手机可用,浏览器直连你在「设置」里填的服务商(约 10–40 秒),密钥不离开本机。"};
   function canGen(){if(engine==="api")return !!(cfg.apiBase&&cfg.model);if(engine==="claude")return MODE==="local";return MODE==="local"&&ready}
@@ -382,8 +382,7 @@
   function enterLocal(s){
     MODE="local";
     $("modeTag").textContent="本地 14B · 完全离线 · 忠实不过审";
-    MIRROR_DEFAULT=s.mirror_url||"";
-    if(!cfg.mirror&&MIRROR_DEFAULT){cfg.mirror=MIRROR_DEFAULT;saveCfg();cfgToUI()}
+    
     function poll(){fetch("status").then(function(r){return r.json()}).then(function(st){
       var p=$("statusPill"),t=$("statusTxt");
       if(st.err){p.className="pill err";t.textContent="模型加载出错";$("genHint").textContent=st.err;return}
@@ -633,7 +632,7 @@
         +(it.src?'<div class="hmeta">来源:'+esc(it.src)+'</div>':'')
         +'<div class="krow"><button class="btn3" data-act="copy">📋 复制</button>'
         +(INSERTABLE[it.cat]?'<button class="btn3" data-act="ins">⤵ 加进场景框</button>':'')
-        +'<button class="btn3" data-act="mir">🖼 镜像站生图</button></div></div>';
+        +'</div></div>';
       var det=row.querySelector(".kdetail"),car=row.querySelector(".car");
       function tog(){var o=det.style.display==="block";det.style.display=o?"none":"block";car.textContent=o?"▸":"▾"}
       row.querySelector(".kn").addEventListener("click",tog);car.addEventListener("click",tog);
@@ -645,7 +644,6 @@
       if(ins)ins.addEventListener("click",function(){
         var t=$("scene");t.value=(t.value?t.value.replace(/\s+$/,"")+"\n":"")+"【技法参考】"+it.name+":"+(it.prompt||"");
         window.scrollTo({top:0,behavior:"smooth"});toast("已加进场景框,生成时会参考")});
-      row.querySelector('[data-act="mir"]').addEventListener("click",function(){cp(it.prompt||"",true);openMirror()});
       box.appendChild(row);
     });
     if(!shown.length)box.innerHTML='<div style="color:var(--dim);font-size:13px;padding:3px 2px">没有匹配条目。</div>';
@@ -656,14 +654,6 @@
       $("libcount").textContent="("+(LIB.items||[]).length+" 条)"})});
   $("libSearch").addEventListener("input",function(){libQ=this.value.trim();renderLib()});
   loadLib().then(function(){$("libcount").textContent="("+(LIB.items||[]).length+" 条)"});
-
-  // ===== 镜像站一键 =====
-  function openMirror(){
-    var u=safeUrl(cfg.mirror||MIRROR_DEFAULT);
-    if(!u){toast("先在「设置」里填镜像站地址(需 http/https)");var b=$("setbody");b.style.display="block";$("setarrow").textContent="▾";return}
-    window.open(u,"_blank");
-  }
-  $("mirrorBtn").addEventListener("click",function(){cp($("out").textContent,true);openMirror()});
 
   // ===== 生成(三按钮+生图分镜) =====
   var timer=null,t0=0;
@@ -706,7 +696,7 @@
 
   // ===== 结果操作 =====
   function cp(txt,quiet){if(!txt)return;
-    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(function(){if(!quiet)toast("已复制");else toast("提示词已复制,去镜像站粘贴即可")},function(){fb(txt)});else fb(txt)}
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(function(){if(!quiet)toast("已复制");else toast("提示词已复制,去生成平台粘贴即可")},function(){fb(txt)});else fb(txt)}
   function fb(txt){var ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("已复制")}catch(e){toast("复制失败")}document.body.removeChild(ta)}
   $("copyBtn").addEventListener("click",function(){cp($("out").textContent)});
   $("saveBtn").addEventListener("click",function(){var txt=$("out").textContent;if(!txt)return;
